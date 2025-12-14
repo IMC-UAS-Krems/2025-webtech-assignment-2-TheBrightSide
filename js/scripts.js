@@ -1,4 +1,8 @@
 const CURRENCY = "EUR";
+const DISCOUNT_PERCENT = 0.3;
+const DISCOUNT_AT_COUNT = 3;
+const TAX_RATE = 0.2;
+
 const PURCHASEABLE_PRODUCTS = {
   backpack: {
     name: "Backpack",
@@ -35,8 +39,8 @@ const PURCHASEABLE_PRODUCTS = {
     price: 2.0,
     image_url: "imgs/pen.jpg",
   },
-  stickers: {
-    name: "Stickers",
+  labels: {
+    name: "Labels",
     price: 1.0,
     image_url: "imgs/stickers.jpg",
   },
@@ -52,10 +56,116 @@ const PURCHASEABLE_PRODUCTS = {
   },
 };
 
+const productGrid = document.querySelector("#product-grid");
+const addressForm = document.querySelector("#address-info");
+
 let selectedProducts = [];
 
 function cartButtonHandler(productID) {
+  const formFieldset = addressForm.getElementsByTagName("fieldset")[0];
+
+  if (formFieldset.hasAttribute("disabled"))
+    formFieldset.removeAttribute("disabled");
+
   selectedProducts.push(productID);
+
+  const receiptElement = document.querySelector("#receipt");
+  receiptElement.innerHTML = "";
+  receiptElement.append(...productGenerateReceipt());
+}
+
+function generateSingleRowLRText(textLeft, textRight) {
+  const element = document.createElement("div");
+  element.classList.add("row");
+
+  const numberElement = document.createElement("div");
+  numberElement.classList.add("col-auto", "item-number");
+  numberElement.innerText = "-";
+
+  const leftElement = document.createElement("div");
+  leftElement.classList.add("col", "item-title");
+  leftElement.innerText = textLeft;
+
+  const rightElement = document.createElement("div");
+  rightElement.classList.add("col", "item-price", "text-end");
+  rightElement.innerText = textRight;
+
+  element.append(numberElement, leftElement, rightElement);
+
+  return element;
+}
+
+function productGenerateReceipt() {
+  const receiptMap = selectedProducts.reduce((acc, x) => {
+    if (!(x in acc)) acc[x] = 0;
+    acc[x]++;
+    return acc;
+  }, {});
+
+  const totalPrice = Object.entries(receiptMap).reduce(
+    (acc, [id, count]) => acc + PURCHASEABLE_PRODUCTS[id].price * count,
+    0,
+  );
+
+  const totalCount = Object.entries(receiptMap).reduce(
+    (acc, [_, count]) => acc + count,
+    0,
+  );
+
+  const discount =
+    totalCount >= DISCOUNT_AT_COUNT ? -(totalPrice * DISCOUNT_PERCENT) : 0;
+  const tax = (totalPrice + discount) * TAX_RATE;
+
+  const elements = Object.entries(receiptMap).map(([id, count], index) => {
+    const nameElement = document.createElement("div");
+    nameElement.classList.add("item-title");
+    nameElement.innerText = PURCHASEABLE_PRODUCTS[id].name;
+
+    const subtextElement = document.createElement("div");
+    subtextElement.classList.add("item-sub", "text-secondary");
+    subtextElement.innerHTML = `${PURCHASEABLE_PRODUCTS[id].price} ${CURRENCY} &times; ${count}`;
+
+    const totalPrice = `${PURCHASEABLE_PRODUCTS[id].price * count} ${CURRENCY}`;
+
+    const firstCol = document.createElement("div");
+    firstCol.classList.add("col-auto", "item-number");
+    firstCol.innerText = index + 1;
+
+    const secondCol = document.createElement("div");
+    secondCol.classList.add("col");
+    secondCol.append(nameElement, subtextElement);
+
+    const thirdCol = document.createElement("div");
+    thirdCol.classList.add("col", "item-price", "text-end");
+    thirdCol.innerText = totalPrice;
+
+    const element = document.createElement("div");
+    element.classList.add("row", "align-items-start", "item-row");
+    element.append(firstCol, secondCol, thirdCol);
+
+    return element;
+  });
+
+  elements.push(
+    generateSingleRowLRText("Subtotal:", `${totalPrice} ${CURRENCY}`),
+  );
+  elements.push(
+    generateSingleRowLRText("Discount:", `${discount} ${CURRENCY}`),
+  );
+  elements.push(
+    generateSingleRowLRText(
+      `Tax (${DISCOUNT_PERCENT * 100}%):`,
+      `${tax} ${CURRENCY}`,
+    ),
+  );
+  elements.push(
+    generateSingleRowLRText(
+      `Total:`,
+      `${totalPrice + discount + tax} ${CURRENCY}`,
+    ),
+  );
+
+  return elements;
 }
 
 function productGenerateCard(productID, product) {
@@ -63,6 +173,7 @@ function productGenerateCard(productID, product) {
   const imgElement = document.createElement("img");
   const cardBodyElement = document.createElement("div");
   const cardBodyTitleElement = document.createElement("h5");
+  const cardBodyTextElement = document.createElement("p");
   const cardBodyButton = document.createElement("button");
 
   cardBodyButton.innerText = "Add to cart";
@@ -72,15 +183,22 @@ function productGenerateCard(productID, product) {
   cardBodyTitleElement.classList.add("card-title");
   cardBodyTitleElement.innerText = product.name;
 
+  cardBodyTextElement.classList.add("card-text");
+  cardBodyTextElement.innerText = `${product.price} ${CURRENCY}`;
+
   cardBodyElement.classList.add("card-body");
-  cardBodyElement.append(cardBodyTitleElement, cardBodyButton);
+  cardBodyElement.append(
+    cardBodyTitleElement,
+    cardBodyTextElement,
+    cardBodyButton,
+  );
 
   imgElement.classList.add("card-img-top", "h-100");
   imgElement.style.objectFit = "cover";
   imgElement.src = product.image_url;
   imgElement.alt = product.name;
 
-  cardElement.classList.add("card");
+  cardElement.classList.add("card", "my-3");
   cardElement.style.height = "500px";
   cardElement.append(imgElement, cardBodyElement);
 
@@ -113,7 +231,7 @@ function productGenerateGrid(elementNodes, elementsPerRow) {
     }
 
     const element = document.createElement("div");
-    element.classList.add("col-4");
+    element.classList.add("col-12", "col-sm-6", "col-lg-4");
     element.appendChild(elementNode);
     currentRow.appendChild(element);
 
@@ -125,7 +243,7 @@ function productGenerateGrid(elementNodes, elementsPerRow) {
   return out;
 }
 
-document.querySelector("#product-grid").append(
+productGrid.append(
   ...productGenerateGrid(
     Object.entries(PURCHASEABLE_PRODUCTS).map((e) =>
       productGenerateCard(e[0], e[1]),
@@ -133,3 +251,4 @@ document.querySelector("#product-grid").append(
     3,
   ),
 );
+
