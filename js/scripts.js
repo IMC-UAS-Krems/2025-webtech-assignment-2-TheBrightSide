@@ -68,7 +68,7 @@ let selectedProducts = [];
 function updateReceiptElement() {
   const receiptElement = document.querySelector("#receipt");
   receiptElement.innerHTML = "";
-  receiptElement.append(...productGenerateReceipt(true));
+  receiptElement.append(...generateProductReceipt(true));
 }
 
 function removeLinkHandler(productID) {
@@ -104,7 +104,7 @@ function cartButtonHandler(productID) {
 }
 
 // generates a row of two columns of texts, one left-aligned, the other right-aligned
-function singleRowLRTextGenerate(textLeft, textRight) {
+function generateSingleRowLRText(textLeft, textRight) {
   const element = document.createElement("div");
   element.classList.add("row");
 
@@ -126,7 +126,7 @@ function singleRowLRTextGenerate(textLeft, textRight) {
 }
 
 // generates the DOM for the receipt of the cart
-function productGenerateReceipt(addLinksForRemoval = false) {
+function generateProductReceipt(addLinksForRemoval = false) {
   const receiptMap = selectedProducts.reduce((acc, x) => {
     if (!(x in acc)) acc[x] = 0;
     acc[x]++;
@@ -190,22 +190,22 @@ function productGenerateReceipt(addLinksForRemoval = false) {
   });
 
   elements.push(
-    singleRowLRTextGenerate(
+    generateSingleRowLRText(
       "Subtotal:",
       `${totalPrice.toFixed(2)} ${CURRENCY}`,
     ),
   );
   elements.push(
-    singleRowLRTextGenerate("Discount:", `${discount.toFixed(2)} ${CURRENCY}`),
+    generateSingleRowLRText("Discount:", `${discount.toFixed(2)} ${CURRENCY}`),
   );
   elements.push(
-    singleRowLRTextGenerate(
+    generateSingleRowLRText(
       `Tax (${DISCOUNT_PERCENT * 100}%):`,
       `${tax.toFixed(2)} ${CURRENCY}`,
     ),
   );
   elements.push(
-    singleRowLRTextGenerate(
+    generateSingleRowLRText(
       `Total:`,
       `${(totalPrice + discount + tax).toFixed(2)} ${CURRENCY}`,
     ),
@@ -215,7 +215,7 @@ function productGenerateReceipt(addLinksForRemoval = false) {
 }
 
 // generates a card for a given product
-function productGenerateCard(productID, product) {
+function generateProductCard(productID, product) {
   const cardElement = document.createElement("div");
   const imgElement = document.createElement("img");
   const cardBodyElement = document.createElement("div");
@@ -258,7 +258,7 @@ function productGenerateCard(productID, product) {
  * @param {number} elementsPerRow
  * @returns
  */
-function productGenerateGrid(elementNodes, elementsPerRow) {
+function generateProductGrid(elementNodes, elementsPerRow) {
   let out = [];
 
   /**
@@ -294,7 +294,7 @@ function productGenerateGrid(elementNodes, elementsPerRow) {
  * Generates the DOM of supplied contact details
  * @param {{ [k: string]: FormDataEntryValue; }} formData
  */
-function contactDetailsGenerate(formData) {
+function generateContactDetails(formData) {
   // this function is split into two parts
   // first replace adds a space before the capital letters
   // second replace capitalizes the first letter
@@ -303,7 +303,7 @@ function contactDetailsGenerate(formData) {
   };
 
   return Object.entries(formData).map(([key, value]) =>
-    singleRowLRTextGenerate(`${camelToTitle(key)}: `, value.toString()),
+    generateSingleRowLRText(`${camelToTitle(key)}: `, value.toString()),
   );
 }
 
@@ -311,7 +311,7 @@ function contactDetailsGenerate(formData) {
  * generates the body of the modal for the confirmation of purchase
  * @param {{ [k: string]: FormDataEntryValue; }} formData
  */
-function modalBodyGenerate(formData) {
+function generateModalBody(formData) {
   let firstTitle = document.createElement("h5");
   firstTitle.innerText = "Purchased Products";
 
@@ -320,10 +320,10 @@ function modalBodyGenerate(formData) {
 
   return [
     firstTitle,
-    ...productGenerateReceipt(),
+    ...generateProductReceipt(),
     document.createElement("hr"),
     secondTitle,
-    ...contactDetailsGenerate(formData),
+    ...generateContactDetails(formData),
   ];
 }
 
@@ -373,15 +373,15 @@ addressForm.addEventListener("submit", (e) => {
     "Thank you for your purchase!";
   confirmationModal
     .querySelector("#confirmation-modal-body")
-    .append(...modalBodyGenerate(data));
+    .append(...generateModalBody(data));
 
   new bootstrap.Modal(confirmationModal).show();
 });
 
 productGrid.append(
-  ...productGenerateGrid(
+  ...generateProductGrid(
     Object.entries(PURCHASEABLE_PRODUCTS).map((e) =>
-      productGenerateCard(e[0], e[1]),
+      generateProductCard(e[0], e[1]),
     ),
     3,
   ),
