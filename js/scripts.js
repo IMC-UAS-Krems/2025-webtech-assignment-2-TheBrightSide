@@ -78,7 +78,8 @@ function cartButtonHandler(productID) {
   receiptElement.append(...productGenerateReceipt());
 }
 
-function generateSingleRowLRText(textLeft, textRight) {
+// generates a row of two columns of texts, one left-aligned, the other right-aligned
+function singleRowLRTextGenerate(textLeft, textRight) {
   const element = document.createElement("div");
   element.classList.add("row");
 
@@ -99,6 +100,7 @@ function generateSingleRowLRText(textLeft, textRight) {
   return element;
 }
 
+// generates the DOM for the receipt of the cart
 function productGenerateReceipt() {
   const receiptMap = selectedProducts.reduce((acc, x) => {
     if (!(x in acc)) acc[x] = 0;
@@ -151,19 +153,19 @@ function productGenerateReceipt() {
   });
 
   elements.push(
-    generateSingleRowLRText("Subtotal:", `${totalPrice} ${CURRENCY}`),
+    singleRowLRTextGenerate("Subtotal:", `${totalPrice} ${CURRENCY}`),
   );
   elements.push(
-    generateSingleRowLRText("Discount:", `${discount} ${CURRENCY}`),
+    singleRowLRTextGenerate("Discount:", `${discount} ${CURRENCY}`),
   );
   elements.push(
-    generateSingleRowLRText(
+    singleRowLRTextGenerate(
       `Tax (${DISCOUNT_PERCENT * 100}%):`,
       `${tax} ${CURRENCY}`,
     ),
   );
   elements.push(
-    generateSingleRowLRText(
+    singleRowLRTextGenerate(
       `Total:`,
       `${totalPrice + discount + tax} ${CURRENCY}`,
     ),
@@ -172,6 +174,7 @@ function productGenerateReceipt() {
   return elements;
 }
 
+// generates a card for a given product
 function productGenerateCard(productID, product) {
   const cardElement = document.createElement("div");
   const imgElement = document.createElement("img");
@@ -210,7 +213,7 @@ function productGenerateCard(productID, product) {
 }
 
 /**
- *
+ * Generates a grid of product gards
  * @param {Node[]} elementsNodes
  * @param {number} elementsPerRow
  * @returns
@@ -248,10 +251,10 @@ function productGenerateGrid(elementNodes, elementsPerRow) {
 }
 
 /**
- *
+ * Generates the DOM of supplied contact details
  * @param {{ [k: string]: FormDataEntryValue; }} formData
  */
-function generateContactDetails(formData) {
+function contactDetailsGenerate(formData) {
   // this function is split into two parts
   // first replace adds a space before the capital letters
   // second replace capitalizes the first letter
@@ -260,15 +263,15 @@ function generateContactDetails(formData) {
   };
 
   return Object.entries(formData).map(([key, value]) =>
-    generateSingleRowLRText(`${camelToTitle(key)}: `, value.toString()),
+    singleRowLRTextGenerate(`${camelToTitle(key)}: `, value.toString()),
   );
 }
 
 /**
- *
+ * generates the body of the modal for the confirmation of purchase
  * @param {{ [k: string]: FormDataEntryValue; }} formData
  */
-function generateModalBody(formData) {
+function modalBodyGenerate(formData) {
   let firstTitle = document.createElement("h5");
   firstTitle.innerText = "Purchased Products";
 
@@ -280,7 +283,7 @@ function generateModalBody(formData) {
     ...productGenerateReceipt(),
     document.createElement("hr"),
     secondTitle,
-    ...generateContactDetails(formData),
+    ...contactDetailsGenerate(formData),
   ];
 }
 
@@ -314,7 +317,7 @@ addressForm.addEventListener("submit", (e) => {
       "Thank you for your purchase!";
     confirmationModal
       .querySelector("#confirmation-modal-body")
-      .append(...generateModalBody(data));
+      .append(...modalBodyGenerate(data));
   }
 
   new bootstrap.Modal(confirmationModal).show();
