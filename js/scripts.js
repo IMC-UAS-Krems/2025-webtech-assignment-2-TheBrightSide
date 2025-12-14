@@ -327,38 +327,53 @@ function modalBodyGenerate(formData) {
   ];
 }
 
+addressForm.addEventListener("input", (e) => {
+  e.target.form.classList.remove("was-validated");
+  e.target.classList.remove("is-invalid", "is-valid");
+});
+
 addressForm.addEventListener("submit", (e) => {
   e.preventDefault();
   let data = Object.fromEntries(new FormData(e.target).entries());
 
-  /**
-   * @type string | null
-   */
-  let errorText = null;
+  let invalid = false;
+
+  if (!addressForm.checkValidity()) {
+    e.stopPropagation();
+    invalid = true;
+  }
+
+  if (!data.zip || !data.phone) invalid = true;
+
+  const zipRegex = /^[0-9]{1,6}$/;
+  if (!zipRegex.test(data.zip)) {
+    e.target.zip.classList.add("is-invalid");
+    e.target.zip.classList.remove("is-valid");
+    invalid = true;
+  } else {
+    e.target.zip.classList.add("is-valid");
+    e.target.zip.classList.remove("is-invalid");
+  }
 
   const phoneRegex = /^[0-9]+$/;
-  const zipRegex = /^[0-9]{1,6}$/;
-  if (data.zip && !zipRegex.test(data.zip)) {
-    errorText =
-      "Zip code must contain only digits and be between 1 and 6 characters.";
-  } else if (data.phone && !phoneRegex.test(data.phone)) {
-    errorText = "Phone number must contain only digits.";
-  }
-
-  confirmationModal.querySelector("#confirmation-modal-body").innerHTML = "";
-
-  if (errorText) {
-    confirmationModal.querySelector("#confirmation-modal-label").innerText =
-      "User Error";
-    confirmationModal.querySelector("#confirmation-modal-body").innerText =
-      errorText;
+  if (!phoneRegex.test(data.phone)) {
+    e.target.phone.classList.add("is-invalid");
+    e.target.phone.classList.remove("is-valid");
+    invalid = true;
   } else {
-    confirmationModal.querySelector("#confirmation-modal-label").innerText =
-      "Thank you for your purchase!";
-    confirmationModal
-      .querySelector("#confirmation-modal-body")
-      .append(...modalBodyGenerate(data));
+    e.target.phone.classList.add("is-valid");
+    e.target.phone.classList.remove("is-invalid");
   }
+
+  if (invalid) return;
+
+  addressForm.classList.add("was-validated");
+
+  confirmationModal.querySelector("#confirmation-modal-label").innerText =
+    "Thank you for your purchase!";
+  confirmationModal
+    .querySelector("#confirmation-modal-body")
+    .append(...modalBodyGenerate(data));
 
   new bootstrap.Modal(confirmationModal).show();
 });
