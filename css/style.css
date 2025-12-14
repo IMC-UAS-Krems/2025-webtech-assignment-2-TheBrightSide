@@ -1,0 +1,28 @@
+.item-row {
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.item-number {
+    width: 24px;
+    color: #555;
+}
+
+.item-title {
+    font-weight: 500;
+}
+
+.item-sub {
+    color: #777;
+    font-size: 0.9rem;
+}
+
+.item-price {
+    font-weight: 500;
+}
+
+.label-required::after {
+    content: " *";
+    color: var(--bs-danger);
+}
+
