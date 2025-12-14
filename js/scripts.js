@@ -65,7 +65,34 @@ const confirmationModal = document.querySelector("#confirmation-modal");
 
 let selectedProducts = [];
 
+function updateReceiptElement() {
+  const receiptElement = document.querySelector("#receipt");
+  receiptElement.innerHTML = "";
+  receiptElement.append(...productGenerateReceipt(true));
+}
+
+function removeLinkHandler(productID) {
+  console.log("cart remove", PURCHASEABLE_PRODUCTS[productID]);
+
+  // https://stackoverflow.com/questions/5767325/how-can-i-remove-a-specific-item-from-an-array-in-javascript
+  let idx = selectedProducts.indexOf(productID);
+  if (idx > -1) {
+    selectedProducts.splice(idx, 1);
+  }
+
+  if (selectedProducts.length == 0) {
+    const formFieldset = addressForm.getElementsByTagName("fieldset")[0];
+
+    if (!formFieldset.hasAttribute("disabled"))
+      formFieldset.setAttribute("disabled", true);
+  }
+
+  updateReceiptElement();
+}
+
 function cartButtonHandler(productID) {
+  console.log("cart add", PURCHASEABLE_PRODUCTS[productID]);
+
   const formFieldset = addressForm.getElementsByTagName("fieldset")[0];
 
   if (formFieldset.hasAttribute("disabled"))
@@ -73,9 +100,7 @@ function cartButtonHandler(productID) {
 
   selectedProducts.push(productID);
 
-  const receiptElement = document.querySelector("#receipt");
-  receiptElement.innerHTML = "";
-  receiptElement.append(...productGenerateReceipt());
+  updateReceiptElement();
 }
 
 // generates a row of two columns of texts, one left-aligned, the other right-aligned
@@ -101,7 +126,7 @@ function singleRowLRTextGenerate(textLeft, textRight) {
 }
 
 // generates the DOM for the receipt of the cart
-function productGenerateReceipt() {
+function productGenerateReceipt(addLinksForRemoval = false) {
   const receiptMap = selectedProducts.reduce((acc, x) => {
     if (!(x in acc)) acc[x] = 0;
     acc[x]++;
@@ -124,14 +149,26 @@ function productGenerateReceipt() {
 
   const elements = Object.entries(receiptMap).map(([id, count], index) => {
     const nameElement = document.createElement("div");
-    nameElement.classList.add("item-title");
-    nameElement.innerText = PURCHASEABLE_PRODUCTS[id].name;
+    if (!addLinksForRemoval) {
+      nameElement.classList.add("item-title");
+      nameElement.innerText = PURCHASEABLE_PRODUCTS[id].name;
+    } else {
+      const anchorElement = document.createElement("a");
+      anchorElement.classList.add("item-title");
+      anchorElement.innerText = PURCHASEABLE_PRODUCTS[id].name;
+      anchorElement.addEventListener("click", (e) => {
+        e.preventDefault();
+        removeLinkHandler(id);
+      });
+
+      nameElement.append(anchorElement);
+    }
 
     const subtextElement = document.createElement("div");
     subtextElement.classList.add("item-sub", "text-secondary");
-    subtextElement.innerHTML = `${PURCHASEABLE_PRODUCTS[id].price} ${CURRENCY} &times; ${count}`;
+    subtextElement.innerHTML = `${PURCHASEABLE_PRODUCTS[id].price.toFixed(2)} ${CURRENCY} &times; ${count}`;
 
-    const totalPrice = `${PURCHASEABLE_PRODUCTS[id].price * count} ${CURRENCY}`;
+    const totalPrice = `${(PURCHASEABLE_PRODUCTS[id].price * count).toFixed(2)} ${CURRENCY}`;
 
     const firstCol = document.createElement("div");
     firstCol.classList.add("col-auto", "item-number");
@@ -153,21 +190,24 @@ function productGenerateReceipt() {
   });
 
   elements.push(
-    singleRowLRTextGenerate("Subtotal:", `${totalPrice} ${CURRENCY}`),
+    singleRowLRTextGenerate(
+      "Subtotal:",
+      `${totalPrice.toFixed(2)} ${CURRENCY}`,
+    ),
   );
   elements.push(
-    singleRowLRTextGenerate("Discount:", `${discount} ${CURRENCY}`),
+    singleRowLRTextGenerate("Discount:", `${discount.toFixed(2)} ${CURRENCY}`),
   );
   elements.push(
     singleRowLRTextGenerate(
       `Tax (${DISCOUNT_PERCENT * 100}%):`,
-      `${tax} ${CURRENCY}`,
+      `${tax.toFixed(2)} ${CURRENCY}`,
     ),
   );
   elements.push(
     singleRowLRTextGenerate(
       `Total:`,
-      `${totalPrice + discount + tax} ${CURRENCY}`,
+      `${(totalPrice + discount + tax).toFixed(2)} ${CURRENCY}`,
     ),
   );
 
