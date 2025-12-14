@@ -56,8 +56,12 @@ const PURCHASEABLE_PRODUCTS = {
   },
 };
 
-const productGrid = document.querySelector("#product-grid");
+/**
+ * @type HTMLFormElement | null
+ */
 const addressForm = document.querySelector("#address-info");
+const productGrid = document.querySelector("#product-grid");
+const confirmationModal = document.querySelector("#confirmation-modal");
 
 let selectedProducts = [];
 
@@ -243,6 +247,79 @@ function productGenerateGrid(elementNodes, elementsPerRow) {
   return out;
 }
 
+/**
+ *
+ * @param {{ [k: string]: FormDataEntryValue; }} formData
+ */
+function generateContactDetails(formData) {
+  // this function is split into two parts
+  // first replace adds a space before the capital letters
+  // second replace capitalizes the first letter
+  const camelToTitle = (str) => {
+    return str.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+  };
+
+  return Object.entries(formData).map(([key, value]) =>
+    generateSingleRowLRText(`${camelToTitle(key)}: `, value.toString()),
+  );
+}
+
+/**
+ *
+ * @param {{ [k: string]: FormDataEntryValue; }} formData
+ */
+function generateModalBody(formData) {
+  let firstTitle = document.createElement("h5");
+  firstTitle.innerText = "Purchased Products";
+
+  let secondTitle = document.createElement("h5");
+  secondTitle.innerText = "Address Details";
+
+  return [
+    firstTitle,
+    ...productGenerateReceipt(),
+    document.createElement("hr"),
+    secondTitle,
+    ...generateContactDetails(formData),
+  ];
+}
+
+addressForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  let data = Object.fromEntries(new FormData(e.target).entries());
+
+  /**
+   * @type string | null
+   */
+  let errorText = null;
+
+  const phoneRegex = /^[0-9]+$/;
+  const zipRegex = /^[0-9]{1,6}$/;
+  if (data.zip && !zipRegex.test(data.zip)) {
+    errorText =
+      "Zip code must contain only digits and be between 1 and 6 characters.";
+  } else if (data.phone && !phoneRegex.test(data.phone)) {
+    errorText = "Phone number must contain only digits.";
+  }
+
+  confirmationModal.querySelector("#confirmation-modal-body").innerHTML = "";
+
+  if (errorText) {
+    confirmationModal.querySelector("#confirmation-modal-label").innerText =
+      "User Error";
+    confirmationModal.querySelector("#confirmation-modal-body").innerText =
+      errorText;
+  } else {
+    confirmationModal.querySelector("#confirmation-modal-label").innerText =
+      "Thank you for your purchase!";
+    confirmationModal
+      .querySelector("#confirmation-modal-body")
+      .append(...generateModalBody(data));
+  }
+
+  new bootstrap.Modal(confirmationModal).show();
+});
+
 productGrid.append(
   ...productGenerateGrid(
     Object.entries(PURCHASEABLE_PRODUCTS).map((e) =>
@@ -251,4 +328,3 @@ productGrid.append(
     3,
   ),
 );
-
